@@ -1,496 +1,221 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Guha Family Lineage Tree</title>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <style>
-    :root{
-      --accent:#2196f3;
-      --box-bg:#ffffff;
-      --box-border:#1e88e5;
-      --text:#111;
-      --badge-bg:#0b76d1;
-      --badge-color:#fff;
-    }
-    /* Page & background (BG2: soft gradient) */
-    body{
-      margin:0;
-      font-family: "Segoe UI", Roboto, Arial, sans-serif;
-      background: linear-gradient(180deg,#f6fbff 0%, #eef6ff 50%, #f8fbff 100%);
-      overflow:hidden;
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>Family Lineage Tree</title>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(to bottom right, #e8f1ff, #f8fbff);
+        overflow: hidden;
     }
 
-    /* Header (title left) */
-    header{
-      background:transparent;
-      color:#06283d;
-      padding:12px 18px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      position:relative;
-      z-index:60;
-    }
-    header h1{ margin:0; font-size:20px; letter-spacing:0.3px; font-weight:700; color:var(--accent); }
-
-    /* Controls (search) */
-    #controls{ position:absolute; left:18px; top:14px; z-index:70; display:flex; gap:8px; align-items:center; }
-    #search{
-      width:260px; padding:8px 10px; border-radius:8px; border:1px solid rgba(0,0,0,0.12); font-size:13px;
-      box-shadow:0 1px 4px rgba(0,0,0,0.06); background:white;
-    }
-    #suggestions{ position:absolute; left:18px; top:52px; z-index:130; background:#fff; border-radius:6px; box-shadow:0 6px 18px rgba(0,0,0,0.12); max-height:220px; overflow:auto; width:260px; display:none; }
-    #suggestions div{ padding:8px 10px; cursor:pointer; border-bottom:1px solid #f0f0f0; }
-    #suggestions div:hover{ background:#f0f6ff; }
-
-    /* Info box (top-right) style C (icon + close/hide) */
-    #info-wrapper{ position:absolute; right:18px; top:12px; z-index:80; display:flex; flex-direction:column; align-items:flex-end; }
-    #info-toggle{
-      display:flex; align-items:center; gap:8px; background:white; border-radius:8px; padding:6px 8px; border:1px solid #ddd; cursor:pointer;
-      box-shadow:0 2px 8px rgba(0,0,0,0.08);
-    }
-    #info-content{
-      margin-top:8px; width:320px; background:#fff; border-radius:10px; padding:12px;
-      box-shadow:0 12px 30px rgba(16,24,40,0.08); border:1px solid #e6eaf2;
-      font-size:13px; color:#243b53; line-height:1.45;
-    }
-    #info-content.hidden{ display:none; }
-
-    /* SVG canvas */
-    svg{ width:100%; height:calc(100vh - 64px); display:block; cursor:grab; margin-top:12px; }
-
-    /* Links and nodes */
-    .link{ fill:none; stroke:#cfdde9; stroke-width:2px; }
-    .node text{ font-size:14px; fill:var(--text); pointer-events:none; }
-    .node rect{ fill:var(--box-bg); stroke:var(--box-border); stroke-width:1.4px; rx:10; ry:10; }
-    .badge{ fill:var(--badge-bg); opacity:0.98; stroke:none; }
-    .badge-text{ fill:var(--badge-color); font-size:11px; font-weight:700; text-anchor:middle; dominant-baseline:central; pointer-events:none; }
-    .leaf-dot{ fill:#e53935; stroke:none; } /* red dot to mark leaf */
-
-    /* photo circle */
-    .photo{ stroke: #ddd; stroke-width:1px; }
-
-    /* highlight/fade */
-    .highlight rect{ stroke:#ff8a65; stroke-width:2.6px; filter: drop-shadow(0 6px 18px rgba(255,140,105,0.18)); }
-    .faded{ opacity:0.2; }
-
-    .gen-label{ font-size:12px; fill:#374151; pointer-events:none; }
-
-    /* footer button */
-    footer{ position:absolute; bottom:10px; left:0; right:0; text-align:center; z-index:60; }
-    #footer-button{
-      display:inline-block; background:#fff; border:1px solid #e6eaf2; padding:8px 14px; border-radius:10px; cursor:pointer;
-      box-shadow:0 8px 20px rgba(16,24,40,0.06); color:var(--accent); font-weight:700;
+    /* Fixed Header */
+    header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.85);
+        padding: 10px 15px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        backdrop-filter: blur(6px);
+        z-index: 1000;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
 
-    /* responsiveness */
-    @media (max-width:760px){
-      #search{ width:160px; }
-      #info-content{ width:230px; }
-      svg{ height:calc(100vh - 120px); }
+    header h1 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: bold;
     }
-  </style>
+
+    #searchBox {
+        padding: 6px 10px;
+        width: 200px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+    }
+
+    /* Info Box (Fixed) */
+    #infoBox {
+        position: fixed;
+        top: 60px;
+        right: 15px;
+        background: white;
+        width: 250px;
+        padding: 10px;
+        border-radius: 8px;
+        font-size: 13px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        z-index: 999;
+    }
+
+    /* Tree Container */
+    #treeContainer {
+        position: absolute;
+        top: 110px;
+        left: 0;
+        right: 0;
+        bottom: 35px;
+        overflow: auto;
+    }
+
+    /* Node Card */
+    .nodeCard {
+        background: white;
+        border: 1px solid #bbb;
+        border-radius: 8px;
+        padding: 6px;
+        text-align: center;
+        min-width: 110px;
+        max-width: 200px;
+        font-size: 13px;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    .end-branch {
+        border: 2px solid red !important;
+        background: #ffe5e5 !important;
+    }
+
+    /* Round Photo */
+    .photo {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-bottom: 4px;
+        border: 1px solid #888;
+    }
+
+    /* Footer */
+    footer {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        background: rgba(255,255,255,0.9);
+        padding: 5px 10px;
+        text-align: center;
+        font-size: 12px;
+        border-top: 1px solid #ccc;
+        z-index: 1000;
+    }
+
+</style>
 </head>
+
 <body>
-  <header>
+<header>
     <h1>Guha Family Lineage Tree</h1>
-  </header>
+    <input type="text" id="searchBox" placeholder="Search name..." />
+</header>
 
-  <div id="controls" aria-hidden="false">
-    <input id="search" placeholder="Search name..." autocomplete="off" />
-    <div id="suggestions" role="listbox"></div>
-  </div>
+<div id="infoBox">
+    <b>About:</b><br>
+    A dynamic 16-generation family tree.<br><br>
+    ✅ Click nodes to expand/collapse<br>
+    ✅ Search & jump to any member<br>
+    ✅ Red border = End of branch<br>
+    📌 Photos supported in CSV (PhotoURL col.)
+</div>
 
-  <div id="info-wrapper" aria-hidden="false">
-    <div id="info-toggle" title="Toggle info" role="button" aria-pressed="true">
-      <!-- simple info icon -->
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10" stroke="#2196f3" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M12 8v6" stroke="#2196f3" stroke-width="1.6" stroke-linecap="round"/>
-        <circle cx="12" cy="17" r="0.8" fill="#2196f3"/>
-      </svg>
-      <div style="font-size:13px;color:#223;">Info</div>
-    </div>
+<div id="treeContainer"></div>
 
-    <div id="info-content">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <strong>About this Family Tree</strong>
-        <button id="info-close" style="background:#f2f6fb;border:0;padding:6px 8px;border-radius:8px;cursor:pointer;">Hide</button>
-      </div>
-      <p style="margin:10px 0 0 0;color:#334e68;">
-        Click a box to expand/collapse. Use mouse wheel (or pinch) to zoom and drag to pan. Use the search box to find a person — suggestions appear as you type.
-      </p>
-      <p style="margin:8px 0 0 0;font-size:12px;color:#5b6b78;">
-        Data is loaded from <code>data/family.csv</code> in the same repository. Images (optional) are read from the <code>PhotoURL</code> column.
-      </p>
-    </div>
-  </div>
-
-  <svg></svg>
-
-  <footer>
-    <span id="footer-button" role="button" title="Jump to Tamal">TAMAL KUMAR GUHA — Jump to my node</span>
-  </footer>
+<footer>
+    Created with ❤️ — <a href="#" target="_blank">About this project</a>
+</footer>
 
 <script>
-/* ================= CONFIG ================== */
-/* Local CSV path inside the repo */
-const csvPath = "data/family.csv";
-/* footer target name (substring match, case-insensitive) */
-const FOOTER_TARGET_NAME = "Tamal";
-/* default silhouette (data URI SVG) */
-const DEFAULT_SILHOUETTE = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 24 24">' +
-  '<path fill="#e6eef9" d="M12 2a5 5 0 100 10 5 5 0 000-10z"/>' +
-  '<path fill="#d6e6fb" d="M4 20c0-4 4-7 8-7s8 3 8 7v1H4v-1z"/>' +
-  '</svg>'
-);
-/* image size for round badge */
-const PHOTO_SIZE = 56; // px
-/* ========================================== */
-
-/* basic svg + zoom */
-const svg = d3.select("svg");
-const g = svg.append("g");
-const zoom = d3.zoom().scaleExtent([0.25, 2.2]).on("zoom", (event)=> g.attr("transform", event.transform));
-svg.call(zoom);
-
-/* layout */
-const tree = d3.tree().nodeSize([80, 300]);
-const duration = 450;
-
-let root = null;
-let flatList = [];
-
-/* fetch local CSV (same origin) */
-fetch(csvPath).then(res => {
-  if (!res.ok) throw new Error("Failed to load local CSV: " + res.status);
-  return res.text();
-}).then(txt => {
-  const rows = d3.csvParse(txt);
-  if (!rows || rows.length === 0) throw new Error("CSV parsed empty");
-  buildTreeFromRows(rows);
-}).catch(err => {
-  console.error("Error loading CSV:", err);
-  alert("Error loading data/family.csv — ensure the file exists in your repo and is published. See console for details.");
-});
-
-/* Build hierarchy and render */
-function buildTreeFromRows(rows){
-  const normalized = rows.map(r => ({
-    ID: (r.ID||r.id||"").toString().trim(),
-    Name: (r.Name||r.name||"").toString().trim(),
-    ParentID: (r.ParentID||r.ParentId||r.parentid||"").toString().trim(),
-    PhotoURL: (r.PhotoURL||r.photoURL||r.photo||"").toString().trim(),
-    Details: (r.Details||r.details||"").toString().trim()
-  }));
-
-  const map = {};
-  normalized.forEach(r => { map[r.ID] = {...r, children: []}; });
-  let top = null;
-  normalized.forEach(r => {
-    if (r.ParentID && map[r.ParentID]) map[r.ParentID].children.push(map[r.ID]);
-    else top = map[r.ID] || top || map[r.ID];
-  });
-  if (!top) top = normalized.length ? map[normalized[0].ID] : null;
-  if (!top) { alert("No rows available in data/family.csv"); return; }
-
-  root = d3.hierarchy(top, d => d.children && d.children.length ? d.children : null);
-  computeDescCounts(root);
-
-  // flat list for search
-  flatList = [];
-  root.each(d => flatList.push({ id: d.data.ID, name: d.data.Name, node: d }));
-
-  // collapse initially
-  if (root.children) root.children.forEach(collapse);
-  root.x0 = 0; root.y0 = 0;
-  update(root);
-
-  // initial view transform
-  svg.call(zoom.transform, d3.zoomIdentity.translate(window.innerWidth/2 - 140, 140).scale(0.85));
-}
-
-/* compute descendant counts recursively */
-function computeDescCounts(node){
-  let total = 0;
-  if (node.children){
-    node.children.forEach(ch => {
-      computeDescCounts(ch);
-      total += 1 + (ch.data._descCount || 0);
-    });
-  }
-  node.data._descCount = total;
-}
-
-/* collapse helper */
-function collapse(d){
-  if (d.children){
-    d._children = d.children;
-    d._children.forEach(collapse);
-    d.children = null;
-  }
-}
-
-/* update (render) */
-function update(source){
-  const treeData = tree(root);
-  const nodes = treeData.descendants();
-  const links = treeData.links();
-
-  nodes.forEach(d => d.y = d.depth * 300);
-
-  // NODES
-  const nodeSel = g.selectAll("g.node").data(nodes, d => d.data.ID);
-
-  // ENTER
-  const nodeEnter = nodeSel.enter().append("g")
-    .attr("class","node")
-    .attr("transform", d => `translate(${source.y0},${source.x0})`)
-    .on("click", (evt,d) => {
-      if (d.children){ d._children = d.children; d.children = null; }
-      else { d.children = d._children; d._children = null; }
-      update(d);
+// ------------------ LOAD CSV ------------------
+fetch("data/family.csv")
+    .then(response => response.text())
+    .then(csv => {
+        const rows = d3.csvParse(csv);
+        buildTree(rows);
+    })
+    .catch(err => {
+        alert("❌ Failed to load family.csv\nCheck if /data/family.csv exists.");
+        console.error(err);
     });
 
-  // Photo circle (if present) will be inserted after rect creation to center properly.
-  // Add text first (multi-line) to compute bounding box
-  nodeEnter.append("text")
-    .attr("class","node-label")
-    .attr("dy","0")
-    .attr("text-anchor","middle")
-    .text(d => d.data.Name)
-    .each(function(d){
-      const text = d3.select(this);
-      const words = d.data.Name.split(/\s+/);
-      const lineHeight = 1.1;
-      let line = [], lineNumber = 0;
-      text.text(null);
-      let tspan = text.append("tspan").attr("x",0).attr("y",0).attr("dy","0em");
-      words.forEach(w => {
-        line.push(w);
-        tspan.text(line.join(" "));
-        if (tspan.node().getComputedTextLength() > 160){
-          line.pop();
-          tspan.text(line.join(" "));
-          line = [w];
-          tspan = text.append("tspan").attr("x",0).attr("y",0).attr("dy",++lineNumber * lineHeight + "em").text(w);
-        }
-      });
+// ------------------ BUILD TREE ------------------
+function buildTree(rows) {
+    const dataMap = {};
+    rows.forEach(d => dataMap[d.ID] = d);
+
+    const rootData = rows.find(d => d.ParentID === "" || d.ParentID === "0");
+    const root = d3.hierarchy(buildNode(rootData));
+
+    function buildNode(d) {
+        const children = rows.filter(x => x.ParentID === d.ID);
+        return { ...d, children: children.map(buildNode) };
+    }
+
+    const width = 1800, height = 2000;
+
+    const svg = d3.select("#treeContainer").append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .call(d3.zoom().on("zoom", (event) => {
+            g.attr("transform", event.transform);
+        }));
+
+    const g = svg.append("g").attr("transform", "translate(50,50)");
+
+    const treeLayout = d3.tree().nodeSize([120, 200]);
+    treeLayout(root);
+
+    const link = g.selectAll(".link")
+        .data(root.links())
+        .enter()
+        .append("path")
+        .attr("d", d3.linkHorizontal()
+            .x(d => d.y)
+            .y(d => d.x))
+        .attr("fill", "none")
+        .attr("stroke", "#666");
+
+    const node = g.selectAll(".node")
+        .data(root.descendants())
+        .enter()
+        .append("g")
+        .attr("transform", d => `translate(${d.y},${d.x})`)
+        .on("click", (_, d) => {
+            d.children = d.children ? null : d._children;
+            update();
+        });
+
+    node.append("foreignObject")
+        .attr("width", 180)
+        .attr("height", 130)
+        .attr("x", -90)
+        .attr("y", -55)
+        .html(d => `
+            <div class="nodeCard ${(!d.children && (!d._children)) ? "end-branch" : ""}">
+                <img class="photo" src="${d.data.PhotoURL || "https://i.imgur.com/ZzQ5Q5Q.png"}" />
+                <b>${d.data.Name}</b><br>
+                <span style="font-size:11px">${d.data.DOB || ""}</span>
+            </div>
+        `);
+
+    // Search Function
+    document.getElementById("searchBox").addEventListener("keyup", function() {
+        const val = this.value.toLowerCase();
+        node.style("opacity", d => d.data.Name.toLowerCase().includes(val) ? 1 : 0.2);
     });
-
-  // After text exists, measure and create rect + photo + badges
-  nodeEnter.each(function(d){
-    const nodeG = d3.select(this);
-    const textEl = nodeG.select("text").node();
-    const bbox = textEl.getBBox();
-    const padX = 14, padY = 8;
-    // If photo exists, add extra top space
-    const hasPhoto = !!d.data.PhotoURL;
-    const topPhotoSpace = PHOTO_SIZE + 8; // photo height + margin
-    const rectW = Math.max(90, bbox.width + padX*2);
-    const rectH = bbox.height + padY*2 + (hasPhoto ? topPhotoSpace : 0);
-    d._rectW = rectW; d._rectH = rectH;
-
-    // insert rect behind text
-    nodeG.insert("rect","text")
-      .attr("x", -rectW/2)
-      .attr("y", -rectH/2)
-      .attr("width", rectW)
-      .attr("height", rectH)
-      .attr("rx", 10).attr("ry", 10)
-      .style("fill", "var(--box-bg)")
-      .style("stroke", "var(--box-border)")
-      .style("stroke-width", 1.4);
-
-    // add photo circle if image exists (I1: round badge above name)
-    // Use PhotoURL or default silhouette
-    const photoX = 0;
-    const photoY = -rectH/2 + (PHOTO_SIZE/2) + 8;
-    const imageUrl = d.data.PhotoURL ? d.data.PhotoURL : DEFAULT_SILHOUETTE;
-
-    // append image as <image> then clip with circle
-    nodeG.append("defs")
-      .append("clipPath")
-      .attr("id", "clip-"+(d.data.ID||Math.random()).replace(/[^a-zA-Z0-9]/g,'_'))
-      .append("circle")
-      .attr("cx", photoX)
-      .attr("cy", photoY)
-      .attr("r", PHOTO_SIZE/2);
-
-    nodeG.append("image")
-      .attr("xlink:href", imageUrl)
-      .attr("x", photoX - PHOTO_SIZE/2)
-      .attr("y", photoY - PHOTO_SIZE/2)
-      .attr("width", PHOTO_SIZE)
-      .attr("height", PHOTO_SIZE)
-      .attr("class", "photo")
-      .attr("clip-path", d => `url(#clip-${(d.data.ID||Math.random()).replace(/[^a-zA-Z0-9]/g,'_')})`)
-      .style("border-radius","50%");
-
-    // reposition text below photo (if photo present)
-    if (hasPhoto){
-      nodeG.select("text").attr("y", -rectH/2 + PHOTO_SIZE + padY + 6).attr("text-anchor","middle");
-    } else {
-      nodeG.select("text").attr("y", -rectH/2 + padY + 2).attr("text-anchor","middle");
-    }
-
-    // descendant badge (top-right)
-    const descCount = d.data._descCount || 0;
-    if (descCount > 0){
-      const bx = rectW/2 - 14;
-      const by = -rectH/2 + 14;
-      nodeG.append("circle").attr("class","badge").attr("cx",bx).attr("cy",by).attr("r",12);
-      nodeG.append("text").attr("class","badge-text").attr("x",bx).attr("y",by).text(descCount);
-    }
-
-    // generation label under rect
-    const genLabelY = rectH/2 + 14;
-    nodeG.append("text").attr("class","gen-label").attr("y", genLabelY).attr("text-anchor","middle").text(`Gen ${d.depth+1}`);
-
-    // leaf red dot to right
-    const isLeaf = !(d.children || d._children);
-    if (isLeaf){
-      const dx = rectW/2 + 12;
-      nodeG.append("circle").attr("class","leaf-dot").attr("cx", dx).attr("cy", 0).attr("r",6);
-    }
-  });
-
-  // MERGE + TRANSITION
-  const nodeUpdate = nodeEnter.merge(nodeSel);
-  nodeUpdate.transition().duration(duration).attr("transform", d => `translate(${d.y},${d.x})`);
-
-  // EXIT
-  const nodeExit = nodeSel.exit().transition().duration(duration).attr("transform", d => `translate(${source.y},${source.x})`).remove();
-
-  // LINKS
-  const linkSel = g.selectAll("path.link").data(links, d => d.target.data.ID);
-  const linkEnter = linkSel.enter().insert("path","g").attr("class","link")
-    .attr("d", d => {
-      const o = {x: source.x0, y: source.y0};
-      return diagonal(o,o);
-    });
-  linkEnter.merge(linkSel).transition().duration(duration).attr("d", d => diagonal(d.source, d.target));
-  linkSel.exit().transition().duration(duration).remove();
-
-  // save positions
-  nodes.forEach(d => { d.x0 = d.x; d.y0 = d.y; });
 }
-
-/* curved path */
-function diagonal(s,d){
-  return `M ${s.y} ${s.x}
-          C ${(s.y + d.y)/2} ${s.x},
-            ${(s.y + d.y)/2} ${d.x},
-            ${d.y} ${d.x}`;
-}
-
-/* ========== Search UI ========== */
-const searchInput = document.getElementById('search');
-const suggestionsBox = document.getElementById('suggestions');
-let suggestionVisible = false;
-
-function showSuggestions(filtered){
-  suggestionsBox.innerHTML = '';
-  if (!filtered.length){ suggestionsBox.style.display='none'; suggestionVisible=false; return; }
-  filtered.slice(0,30).forEach(item => {
-    const div = document.createElement('div');
-    div.textContent = item.name;
-    div.onclick = () => { selectSearchResult(item); suggestionsBox.style.display='none'; suggestionVisible=false; };
-    suggestionsBox.appendChild(div);
-  });
-  suggestionsBox.style.display='block'; suggestionVisible=true;
-}
-
-searchInput.addEventListener('input', e => {
-  const q = e.target.value.trim().toLowerCase();
-  if (!q){ showSuggestions([]); return; }
-  const results = flatList.filter(x => x.name.toLowerCase().includes(q));
-  showSuggestions(results);
-});
-
-searchInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter'){
-    const q = e.target.value.trim().toLowerCase();
-    if (!q) return;
-    const exact = flatList.find(x => x.name.toLowerCase() === q);
-    if (exact) selectSearchResult(exact);
-    else {
-      const first = flatList.find(x => x.name.toLowerCase().includes(q));
-      if (first) selectSearchResult(first);
-    }
-    suggestionsBox.style.display='none'; suggestionVisible=false;
-  }
-});
-
-window.addEventListener('click', (e) => {
-  if (!document.getElementById('controls').contains(e.target) && suggestionVisible){
-    suggestionsBox.style.display='none'; suggestionVisible=false;
-  }
-});
-
-/* select -> expand path -> center -> highlight */
-function selectSearchResult(item){
-  if (!item || !item.node) return;
-  expandPathTo(item.node);
-  centerOnNode(item.node);
-  highlightNode(item.node);
-}
-
-/* expand parents */
-function expandPathTo(targetNode){
-  let curr = targetNode.parent;
-  const toExpand = [];
-  while(curr){
-    toExpand.push(curr);
-    curr = curr.parent;
-  }
-  toExpand.reverse().forEach(n => { if (n._children){ n.children = n._children; n._children = null; } });
-  update(targetNode);
-}
-
-/* center and zoom on node */
-function centerOnNode(targetNode){
-  const transform = d3.zoomTransform(svg.node());
-  const x = targetNode.x, y = targetNode.y;
-  const scale = Math.max(.5, Math.min(1.5, transform.k));
-  const translateX = window.innerWidth/2 - y*scale;
-  const translateY = (window.innerHeight - 64)/2 - x*scale;
-  svg.transition().duration(700).call(zoom.transform, d3.zoomIdentity.translate(translateX, translateY).scale(scale));
-}
-
-/* highlight node */
-function highlightNode(d){
-  g.selectAll("g.node").classed("highlight", false).classed("faded", false);
-  g.selectAll("g.node").filter(n => n.data.ID !== d.data.ID).classed("faded", true);
-  const targetG = g.selectAll("g.node").filter(n => n.data.ID === d.data.ID);
-  targetG.classed("highlight", true);
-  clearTimeout(window._highlightTimer);
-  window._highlightTimer = setTimeout(()=> { g.selectAll("g.node").classed("highlight", false).classed("faded", false); }, 8000);
-}
-
-/* Footer behavior (option B: expand parents then center & highlight) */
-document.getElementById('footer-button').addEventListener('click', () => {
-  if (!flatList.length){ alert("Data not loaded yet."); return; }
-  const found = flatList.find(x => x.name.toLowerCase().includes(FOOTER_TARGET_NAME.toLowerCase()));
-  if (!found){ alert("Could not find 'Tamal' in the data. Ensure the Name contains 'Tamal'."); return; }
-  selectSearchResult(found);
-});
-
-/* Info box toggle and close */
-const infoToggle = document.getElementById('info-toggle');
-const infoContent = document.getElementById('info-content');
-const infoClose = document.getElementById('info-close');
-let infoOpen = true;
-infoToggle.addEventListener('click', () => { infoOpen = !infoOpen; infoContent.classList.toggle('hidden', !infoOpen); });
-infoClose.addEventListener('click', () => { infoOpen = false; infoContent.classList.add('hidden'); });
-
-/* optional: handle window resize gracefully */
-window.addEventListener('resize', () => {
-  // maintain current transform; optionally recenter root if you prefer
-});
 </script>
+
 </body>
 </html>
