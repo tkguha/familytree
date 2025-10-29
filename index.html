@@ -135,11 +135,15 @@
 
 <script>
 /* ================= CONFIG ================== */
-/* Your published Google Sheet CSV (hard-coded) */
-const originalCsv = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTxk4d1BIyeRjHKnaPh_D2SgbpxqjPNnck4sz3PSpocQKgkl2A54-v92UT09ov-x1ibJNgLaSrBgdsX/pub?gid=0&single=true&output=csv";
-/* AllOrigins proxy (raw) */
-const csvProxy = "https://api.allorigins.win/raw?url=" + encodeURIComponent(originalCsv);
-const FOOTER_TARGET_NAME = "Tamal"; // footer jumps to matching name (substring, case-insensitive)
+d3.csv("data/family.csv")
+  .then(data => {
+     console.log("Family data loaded:", data.length, "rows");
+     // continue existing code to build tree...
+  })
+  .catch(error => {
+     console.error("Failed to load local CSV:", error);
+     alert("Error loading family.csv from GitHub.");
+  });
 /* ========================================== */
 
 /* SVG + zoom setup */
@@ -455,3 +459,4 @@ window.addEventListener('resize', () => {
 </script>
 </body>
 </html>
+
