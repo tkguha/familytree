@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Guha Family Lineage Tree</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  :root{
+    --accent:#1f6fb5;
+    --box-bg:#ffffff;
+    --box-border:#b08b57;
+    --text:#15232f;
+    --leaf-bg:#fff6f6;
+    --leaf-border:#e03b3b;
+  }
+  body{ margin:0; font-family: "Segoe UI", Roboto, Arial, sans-serif; background:#fff; color:var(--text); overflow:hidden; }
+  header{ position:fixed; top:0; left:0; right:0; height:64px; display:flex; align-items:center; justify-content:center; padding:8px 16px; z-index:140; background:rgba(255,255,255,0.98); box-shadow:0 4px 12px rgba(0,0,0,0.04); }
+  header h1{ margin:0; font-size:18px; color:var(--accent); font-weight:700; position:absolute; left:18px; }
+  /* Top-center search */
+  #searchCenter{ position:relative; display:flex; justify-content:center; width:100%; }
+  #searchBox{ width:420px; max-width:84vw; padding:10px 12px; border-radius:10px; border:1px solid rgba(0,0,0,0.12); font-size:14px; box-shadow:0 6px 18px rgba(16,24,40,0.04); }
+  #suggestions{ position: absolute; top:48px; left:50%; transform:translateX(-50%); width:420px; max-width:84vw; background:#fff; border-radius:10px; box-shadow:0 12px 30px rgba(16,24,40,0.08); display:none; z-index:200; max-height:320px; overflow:auto; }
+  .suggest-item{ padding:10px 12px; border-bottom:1px solid #f0f2f4; cursor:pointer; font-size:14px; }
+  .suggest-item:hover{ background:#f6fbff; }
+
+  #toolbar{ position:fixed; top:80px; left:16px; z-index:180; display:flex; gap:8px; }
+  .tool-btn{ background:#fff; border:1px solid #eef2f6; padding:8px 10px; border-radius:8px; cursor:pointer; box-shadow:0 8px 20px rgba(16,24,40,0.04); color:var(--accent); font-weight:600; }
+
+  #infoBox{ position:fixed; top:80px; right:16px; width:300px; background:#fff; padding:10px; border-radius:10px; box-shadow:0 12px 30px rgba(16,24,40,0.06); z-index:180; font-size:13px; }
+
+  #svgwrap{ position:absolute; top:140px; left:0; right:0; bottom:56px; overflow:hidden; }
+  svg{ width:100%; height:100%; display:block; }
+
+  .link{ fill:none; stroke:#d7d7d7; stroke-width:2; }
+  .node text{ font-size:13px; fill:var(--text); pointer-events:none; }
+  .node rect{ fill:var(--box-bg); stroke:var(--box-border); stroke-width:1.2px; rx:10; ry:10; }
+  .node rect.leaf{ fill:var(--leaf-bg); stroke:var(--leaf-border); stroke-width:1.6px; }
+  .gen-label{ font-size:12px; fill:#5b6b78; pointer-events:none; }
+  .leaf-dot{ fill:var(--leaf-border); }
+  .photo{ width:56px; height:56px; display:block; }
+
+  .highlight rect{ stroke:#ff8a65; stroke-width:2.6px; filter: drop-shadow(0 8px 18px rgba(255,134,94,0.12)); }
+  .faded{ opacity:0.18; transition:opacity 280ms ease; }
+
+  footer{ position:fixed; bottom:6px; left:0; right:0; text-align:center; z-index:160; }
+  #footerJump{ cursor:pointer; color:var(--accent); font-weight:700; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Guha Family Lineage Tree</h1>
+  <div id="searchCenter">
+    <input id="searchBox" placeholder="Search name or details..." autocomplete="off" />
+    <div id="suggestions" aria-hidden="true"></div>
+  </div>
+</header>
+
+<div id="toolbar">
+  <button id="expandAll" class="tool-btn">Expand All</button>
+  <button id="collapseAll" class="tool-btn">Collapse All</button>
+  <button id="resetView" class="tool-btn">Reset View</button>
+  <button id="downloadPng" class="tool-btn">Download PNG</button>
+</div>
+
+<div id="infoBox">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <strong>About</strong>
+    <button id="hideInfo" style="background:#f0f7ff;border:0;padding:6px;border-radius:8px;color:var(--accent);cursor:pointer;">Hide</button>
+  </div>
+  <p style="margin-top:8px;color:#34495e;font-size:13px;">Click a node to reveal its immediate children. Expanding a branch collapses its siblings. Search includes name and details; suggestions come from the full dataset. Downloading PNG will wait for images to load (may fail if images are hosted without CORS).</p>
+</div>
+
+<div id="svgwrap"><svg></svg></div>
+
+<footer><span id="footerJump">Jump to Tamal</span></footer>
+
+<script>
+/* ---------- CONFIG ---------- */
+const csvPath = "data/family.csv";
+const FOOTER_NAME = "Tamal";
+const PHOTO_SIZE = 56;
+/* ---------------------------- */
+
+const svg = d3.select("svg");
+const g = svg.append("g");
+const zoom = d3.zoom().scaleExtent([0.25,2.2]).on("zoom", (e)=> g.attr("transform", e.transform));
+svg.call(zoom);
+const tree = d3.tree().nodeSize([96, 300]);
+const duration = 420;
+
+let root = null;
+let flatList = []; // entire dataset for search
+
+/* ---------- load csv ---------- */
+fetch(csvPath).then(r => {
+  if(!r.ok) throw new Error("Failed to fetch " + csvPath + " (" + r.status + ")");
+  return r.text();
+}).then(txt => {
+  const rows = d3.csvParse(txt);
+  if(!rows || !rows.length) throw new Error("CSV empty");
+  buildHierarchy(rows);
+}).catch(err => {
+  console.error(err);
+  alert("Error loading data/family.csv — check path and file. See console.");
+});
+
+/* ---------- build hierarchy from ParentID; compute depths; startup S2 ---------- */
+function buildHierarchy(rows){
+  const map = {};
+  rows.forEach(r => {
+    const ID = (r.ID||r.id||"").toString().trim();
+    map[ID] = {...r, ID, children: []};
+  });
+  const roots = [];
+  rows.forEach(r => {
+    const ID = (r.ID||r.id||"").toString().trim();
+    const P = (r.ParentID||r.parentid||"").toString().trim();
+    if(P && map[P]) map[P].children.push(map[ID]);
+    else roots.push(map[ID]);
+  });
+  const rootObj = roots[0] || map[rows[0].ID];
+  if(!rootObj){ alert("No root found in CSV"); return; }
+
+  root = d3.hierarchy(rootObj, d => d.children && d.children.length ? d.children : null);
+  // auto-calc generation
+  root.each(d => d.data._gen = d.depth + 1);
+  computeDesc(root);
+
+  // STARTUP S2: collapse deeper than depth 1 (only Gen1 & Gen2 visible)
+  root.each(d => { if(d.depth > 1){ if(d.children){ d._children = d.children; d._children.forEach(collapse); d.children = null; } } });
+
+  // build flatList from ALL nodes (full dataset) for searching
+  flatList = [];
+  root.each(d => flatList.push({ id: d.data.ID, name: d.data.Name || "", details: (d.data.Details||"") , node: d }));
+
+  update(root);
+  setTimeout(()=> centerOnNode(root, 0.95), 300);
+}
+
+/* compute descendant counts (used for badge earlier if needed) */
+function computeDesc(node){
+  function rec(n){
+    let tot = 0;
+    if(n.children) n.children.forEach(c => { tot += 1 + rec(c); });
+    if(n._children) n._children.forEach(c => { tot += 1 + rec(c); });
+    n.data._descCount = tot;
+    return tot;
+  }
+  rec(node);
+}
+
+/* collapse helper */
+function collapse(n){ if(n.children){ n._children = n.children; n._children.forEach(collapse); n.children = null; } }
+
+/* Expand target, collapse siblings (E2) */
+function expandAndKeep(target){
+  if(!target) return;
+  const parent = target.parent;
+  if(parent && parent.children){
+    parent.children.forEach(sib => { if(sib !== target) collapse(sib); });
+  }
+  if(target._children){ target.children = target._children; target._children = null; }
+  computeDesc(root);
+  update(target);
+}
+
+/* ========== UPDATE (render) ========== */
+function update(source){
+  const treeData = tree(root);
+  const nodes = treeData.descendants();
+  const links = treeData.links();
+  nodes.forEach(d => d.y = d.depth * 300);
+
+  // LINKS
+  const link = g.selectAll("path.link").data(links, d => d.target.data.ID);
+  const linkEnter = link.enter().insert("path","g").attr("class","link").attr("d", d => {
+    const o = {x: source.x0 || source.x, y: source.y0 || source.y};
+    return diagonal(o,o);
+  });
+  linkEnter.merge(link).transition().duration(duration).attr("d", d => diagonal(d.source, d.target));
+  link.exit().transition().duration(duration).remove();
+
+  // NODES
+  const node = g.selectAll("g.node").data(nodes, d => d.data.ID);
+
+  const nodeEnter = node.enter().append("g").attr("class","node")
+    .attr("transform", d => `translate(${source.y0 || source.y || 0},${source.x0 || source.x || 0})`)
+    .on("click", function(event,d){
+      event.stopPropagation();
+      expandAndKeep(d);
+      centerOnNode(d, 1.0);
+    });
+
+  nodeEnter.append("text").attr("class","label").attr("text-anchor","middle").attr("dy","0")
+    .text(d => d.data.Name || "")
+    .each(function(d){
+      const text = d3.select(this);
+      const words = (d.data.Name || "").split(/\s+/);
+      text.text(null);
+      let line = [], lineNumber = 0;
+      const maxW = 160;
+      let tspan = text.append("tspan").attr("x",0).attr("y",0).attr("dy","0em");
+      words.forEach(w => {
+        line.push(w);
+        tspan.text(line.join(" "));
+        if(tspan.node().getComputedTextLength() > maxW){
+          line.pop();
+          tspan.text(line.join(" "));
+          line = [w];
+          tspan = text.append("tspan").attr("x",0).attr("y",0).attr("dy",++lineNumber * 1.1 + "em").text(w);
+        }
+      });
+    });
+
+  nodeEnter.each(function(d){
+    const gnode = d3.select(this);
+    const textEl = gnode.select("text").node();
+    const bbox = textEl.getBBox();
+    const padX = 12, padY = 8;
+    const hasPhoto = !!(d.data.PhotoURL && d.data.PhotoURL.trim());
+    const photoSpace = hasPhoto ? (PHOTO_SIZE + 8) : 0;
+    const rectW = Math.max(90, bbox.width + padX*2);
+    const rectH = bbox.height + padY*2 + photoSpace;
+    d._rectW = rectW; d._rectH = rectH;
+
+    // rect behind
+    gnode.insert("rect","text").attr("x",-rectW/2).attr("y",-rectH/2).attr("width",rectW).attr("height",rectH).attr("rx",10).attr("ry",10)
+      .classed("leaf", !(d.children || d._children));
+
+    // photo only if PhotoURL present (PH1)
+    if(hasPhoto){
+      const px = 0;
+      const py = -rectH/2 + PHOTO_SIZE/2 + 8;
+      const clipId = "clip_" + (d.data.ID||Math.random()).replace(/[^a-zA-Z0-9_]/g,'_');
+      gnode.append("clipPath").attr("id",clipId).append("circle").attr("cx",px).attr("cy",py).attr("r",PHOTO_SIZE/2);
+      gnode.append("image").attr("xlink:href", d.data.PhotoURL).attr("x",px-PHOTO_SIZE/2).attr("y",py-PHOTO_SIZE/2)
+        .attr("width",PHOTO_SIZE).attr("height",PHOTO_SIZE).attr("class","photo").attr("clip-path",`url(#${clipId})`);
+      gnode.select("text").attr("y", -rectH/2 + PHOTO_SIZE + padY + 6);
+    } else {
+      gnode.select("text").attr("y", -rectH/2 + padY + 2);
+    }
+
+    // generation label below
+    gnode.append("text").attr("class","gen-label").attr("y", rectH/2 + 14).attr("text-anchor","middle").text(`Gen ${d.depth+1}`);
+
+    // leaf dot
+    const isLeaf = !(d.children || d._children);
+    if(isLeaf){
+      const dx = rectW/2 + 12;
+      gnode.append("circle").attr("class","leaf-dot").attr("cx", dx).attr("cy", 0).attr("r",6);
+    }
+  });
+
+  const nodeUpdate = nodeEnter.merge(node);
+  nodeUpdate.transition().duration(duration).attr("transform", d => `translate(${d.y},${d.x})`);
+
+  const nodeExit = node.exit().transition().duration(duration).attr("transform", d => `translate(${source.y},${source.x})`).remove();
+
+  nodes.forEach(d => { d.x0 = d.x; d.y0 = d.y; });
+}
+
+/* diagonal */
+function diagonal(s,d){
+  return `M ${s.y} ${s.x}
+          C ${(s.y + d.y)/2} ${s.x},
+            ${(s.y + d.y)/2} ${d.x},
+            ${d.y} ${d.x}`;
+}
+
+/* ========== Search (full dataset) ========== */
+const searchBox = document.getElementById('searchBox');
+const suggestions = document.getElementById('suggestions');
+let suggestionsVisible = false;
+
+function showSuggestions(list){
+  suggestions.innerHTML = '';
+  if(!list.length){ suggestions.style.display='none'; suggestionsVisible=false; return; }
+  list.slice(0,40).forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'suggest-item';
+    const details = item.details ? ` — ${item.details}` : '';
+    div.innerHTML = `<strong>${escapeHtml(item.name)}</strong><span style="color:#6b7b86">${escapeHtml(details)}</span>`;
+    div.onclick = () => { suggestions.style.display='none'; suggestionsVisible=false; selectFromSearch(item); };
+    suggestions.appendChild(div);
+  });
+  suggestions.style.display='block'; suggestionsVisible=true;
+}
+
+function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+
+searchBox.addEventListener('input', e => {
+  const q = (e.target.value || '').trim().toLowerCase();
+  if(!q){ showSuggestions([]); return; }
+  // two-stage: exact/startsWith/contains across name and details
+  const matches = flatList.map(item => {
+    const name = (item.name||'').toLowerCase();
+    const details = (item.details||'').toLowerCase();
+    let score = 0;
+    if(name === q) score = 100;
+    else if(name.startsWith(q)) score = 80;
+    else if(name.includes(q)) score = 60;
+    else if(details.includes(q)) score = 40;
+    return {...item, score};
+  }).filter(x => x.score > 0).sort((a,b)=> b.score - a.score);
+  showSuggestions(matches);
+});
+
+searchBox.addEventListener('keydown', e => {
+  if(e.key === 'Enter'){ e.preventDefault(); const q = (searchBox.value||'').trim().toLowerCase(); if(!q) return; const best = findBestMatch(q); if(best) selectFromSearch(best); suggestions.style.display='none'; suggestionsVisible=false; searchBox.value=''; }
+});
+
+function selectFromSearch(item){
+  expandPathTo(item.node);
+  centerOnNode(item.node, 1.0);
+  highlightNode(item.node);
+}
+
+/* expand path */
+function expandPathTo(target){
+  let curr = target.parent; const toOpen = [];
+  while(curr){ toOpen.push(curr); curr = curr.parent; }
+  toOpen.reverse().forEach(n => { if(n._children){ n.children = n._children; n._children = null; } });
+  computeDesc(root);
+  update(root);
+}
+
+/* center */
+function centerOnNode(node, preferScale=1){
+  const rect = svg.node().getBoundingClientRect();
+  const vw = rect.width, vh = rect.height;
+  const k = Math.max(0.45, Math.min(1.4, preferScale));
+  const tx = vw/2 - node.y * k;
+  const ty = vh/2 - node.x * k;
+  svg.transition().duration(700).call(zoom.transform, d3.zoomIdentity.translate(tx,ty).scale(k));
+}
+
+/* highlight */
+function highlightNode(d){
+  g.selectAll("g.node").classed("highlight", false).classed("faded", false);
+  g.selectAll("g.node").filter(n => n.data.ID !== d.data.ID).classed("faded", true);
+  g.selectAll("g.node").filter(n => n.data.ID === d.data.ID).classed("highlight", true);
+  clearTimeout(window._hlt); window._hlt = setTimeout(()=> { g.selectAll("g.node").classed("highlight", false).classed("faded", false); }, 7000);
+}
+
+/* ---------- find best match (J-P: partial allowed, best fuzzy) ---------- */
+function findBestMatch(q){
+  if(!q) return null;
+  q = q.toLowerCase();
+  // compute simple score across name and details
+  const scored = flatList.map(item => {
+    const name = (item.name||'').toLowerCase();
+    const details = (item.details||'').toLowerCase();
+    let score = 0;
+    if(name === q) score = 200;
+    else if(name.startsWith(q)) score = 160;
+    else if(name.includes(q)) score = 120;
+    // penalize if only details
+    if(details.includes(q) && score === 0) score = 80;
+    // small boost if name contains ascii letters matching (favor english)
+    if(/[a-z]/i.test(q) && /[a-z]/i.test(name)) score += 5;
+    return {...item, score};
+  }).filter(x => x.score > 0).sort((a,b) => b.score - a.score);
+  return scored.length ? scored[0] : null;
+}
+
+/* ---------- Toolbar actions ---------- */
+document.getElementById('expandAll').addEventListener('click', () => {
+  if(!root) return;
+  root.each(d => { if(d._children){ d.children = d._children; d._children = null; } });
+  computeDesc(root); update(root); centerOnNode(root, 0.8);
+});
+document.getElementById('collapseAll').addEventListener('click', () => {
+  if(!root) return;
+  root.each(d => { if(d.children && d.depth > 1){ d._children = d.children; d._children.forEach(collapse); d.children = null; } });
+  computeDesc(root); update(root); centerOnNode(root, 0.85);
+});
+document.getElementById('resetView').addEventListener('click', () => { if(root) centerOnNode(root, 0.95); });
+
+/* ---------- Download PNG (wait for images) ---------- */
+document.getElementById('downloadPng').addEventListener('click', async () => {
+  try {
+    await waitForSvgImages();
+    // clone and inline basic styles
+    const svgNode = svg.node();
+    const clone = svgNode.cloneNode(true);
+    inlineBasicStyles(clone);
+    const serializer = new XMLSerializer();
+    const svgString = serializer.serializeToString(clone);
+    const blob = new Blob([svgString], {type: 'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = svgNode.clientWidth;
+        canvas.height = svgNode.clientHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.drawImage(img, 0, 0);
+        URL.revokeObjectURL(url);
+        const dataUrl = canvas.toDataURL('image/png');
+        const a = document.createElement('a'); a.href = dataUrl; a.download = 'family-tree.png'; document.body.appendChild(a); a.click(); a.remove();
+      } catch(e){
+        alert('PNG creation failed — likely due to external images (CORS). See console.');
+        console.error(e);
+      }
+    };
+    img.onerror = (e) => { URL.revokeObjectURL(url); alert('Could not render image for download. External images may block export (CORS).'); console.error(e); };
+    img.src = url;
+  } catch(err){
+    alert('Download failed: ' + err.message + '\nIf you use external images, host them on GitHub or same origin to allow export.');
+    console.error(err);
+  }
+});
+
+/* wait for images used inside svg to finish loading (or timeout) */
+function waitForSvgImages(timeout = 6000){
+  const images = Array.from(svg.node().querySelectorAll('image'));
+  if(!images.length) return Promise.resolve();
+  const promises = images.map(imgEl => {
+    return new Promise((resolve, reject) => {
+      // try to load via Image object to detect CORS tainting earlier
+      const href = imgEl.getAttribute('xlink:href') || imgEl.getAttribute('href');
+      if(!href) return resolve();
+      const img = new Image();
+      // do not set crossOrigin (can't guarantee) — we just wait for load/error
+      img.onload = () => resolve();
+      img.onerror = () => {
+        // still resolve but mark as problematic
+        resolve();
+      };
+      img.src = href;
+      // if already cached complete quickly
+      if(img.complete) resolve();
+    });
+  });
+  // wait all or timeout
+  return Promise.race([ Promise.all(promises), new Promise((_,rej) => setTimeout(()=> rej(new Error('Image load timeout')), timeout)) ]);
+}
+
+/* inline simple styles into cloned svg to help png rendering */
+function inlineBasicStyles(svgElement){
+  // inline rect/path/text colors used by us
+  svgElement.querySelectorAll('rect').forEach(r => {
+    const fill = r.getAttribute('fill') || window.getComputedStyle(r).fill || '#fff';
+    const stroke = r.getAttribute('stroke') || window.getComputedStyle(r).stroke || '#b08b57';
+    r.setAttribute('fill', fill); r.setAttribute('stroke', stroke);
+  });
+  svgElement.querySelectorAll('path').forEach(p => {
+    const stroke = p.getAttribute('stroke') || window.getComputedStyle(p).stroke || '#d7d7d7';
+    p.setAttribute('stroke', stroke); p.setAttribute('fill','none');
+  });
+  svgElement.querySelectorAll('text').forEach(t => {
+    const fill = t.getAttribute('fill') || window.getComputedStyle(t).fill || '#15232f';
+    const fs = t.getAttribute('font-size') || window.getComputedStyle(t).fontSize || '13px';
+    t.setAttribute('fill', fill); t.setAttribute('font-size', fs);
+  });
+}
+
+/* ---------- footer jump (J-P best partial match) ---------- */
+document.getElementById('footerJump').addEventListener('click', () => {
+  if(!flatList.length){ alert('Data not ready'); return; }
+  const q = FOOTER_NAME.toLowerCase();
+  const best = findBestMatch(q);
+  if(!best){ alert("Could not find '" + FOOTER_NAME + "' in the data"); return; }
+  expandPathTo(best.node); centerOnNode(best.node, 1.0); highlightNode(best.node);
+});
+
+/* ---------- helpers & UI glue ---------- */
+document.getElementById('hideInfo').addEventListener('click', ()=> document.getElementById('infoBox').style.display='none' );
+window.addEventListener('resize', ()=> { if(root) centerOnNode(root, 0.85); });
+
+</script>
+</body>
+</html>
