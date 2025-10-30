@@ -49,87 +49,88 @@ ID,Name,ParentID,PhotoURL,Details,Generation
 48,Mathura Nath (মথুরা নাথ),38,,13
 49,Pratibha (প্রতিভা),48,,14
 50,Sisir Kumari (শিশির কুমারী),48,,14
-51,Akshay Kumar (অক্ষয় কুমার),39,,
-52,Debendra Nath and Nirmali (দেবেন্দ্র নাথ এবং নির্মালী),39,,
-53,Surendra Nath (সুরেন্দ্র নাথ),39,,
-54,Nripendra (নৃপেন্দ্র),51,,
-55,Priyambada (প্রিয়ম্বদা),51,,
-56,Santosh (সন্তোষ),52,,
-57,Bimal (বিমল),52,,
-58,Parimal (পরিমল),52,,
-59,Krishna Chandra and Indu Moti (কৃষ্ণ চন্দ্র এবং ইন্দু মতি),26,,
-60,Krishna Dhan and Rajlakshmi (কৃষ্ণ ধন এবং রাজলক্ষ্মী),59,,
-61,Heramba Mohan and Priyobala (হেরম্ব মোহন এবং প্রিয়বালা),60,,
-62,Shaibalini and Jagadish Chandra (শৈবলিনী ও জগদীশচন্দ্র),60,,
-63,Charubashini and Indubhushan (চারুবাসিনী এবং ইন্দুভূষণ),60,,
-64,Hirendra Narayan and Bina Rani (হীরেন্দ্র নারায়ণ ও বীণা রানী),61,,
-65,Himendra Narayan (হিমেন্দ্র নারায়ণ),61,,
-66,Himadri Narayan (হিমাদ্রি নারায়ণ),64,,
-67,Gokul Chandra (গোকুল চন্দ্র),25,,
-68,Nimai Chandra (নিমাই চন্দ্র),25,,
-69,Nabin Chandra (নবীন চন্দ্র),67,,
-70,Gagan Chandra (গগন চন্দ্র),67,,
-71,Krishna Chaitanya and Surayu Bala (কৃষ্ণ চৈতন্য এবং সূর্য বালা),69,,
-72,Nagendra Nath and Hiranbala (নগেন্দ্র নাথ এবং হিরণবালা),69,,
-73,Aditya (আদিত্য),71,,
-74,Niranjyan (নিরঞ্জন),72,,
-75,Sadhan (সাধন),72,,
-76,Bhajan (ভজন),72,,
-77,Hari Das and Abala Bala (হরি দাস এবং আবলা বালা),70,,
-78,Binod Chandra and Saila Bala (বিনোদ চন্দ্র এবং শৈল বালা),70,,
-79,Kumud Chandra and Angshu Bala (কুমুদ চন্দ্র এবং অংশু বালা),70,,
-80,Sarat Chandra (শরৎচন্দ্র),70,,
-81,Shailendra (শৈলেন্দ্র),77,,
-82,Nitai (নিতাই),77,,
-83,Shukomoy (সুখোময়),79,,
-84,Joytirmoy and Uma (জোতির্ময় এবং উমা),79,,
-85,Bishyamoy and Bani (বিশ্বময় এবং বাণী),79,,
-86,Swarnamoy (স্বর্ণময়),79,,
-87,Badal (বাদল),80,,
-88,Tulu and Lal Mohan (টুলু এবং লাল মোহন),80,,
-89,Kuntala and Dinesh (কুন্তলা এবং দীনেশ),80,,
-90,Bivabati (বিভাবতী),80,,
-91,Shantimoy and Kalyani (শান্তিময় এবং কল্যাণী),78,,
-92,Shudhamoy and Protima (শুধাময় এবং প্রতিমা),78,,
-93,Satyamoy (সত্যময়),78,,
-94,Anil Chandra and Minoti (অনিল চন্দ্র এবং মিনতি),78,,
-95,Protibha and Sukumar (প্রতিভা এবং সুকুমার),78,,
-96,Sunil Chandra (সুনীল চন্দ্র),78,,
-97,Nikhil Krishna and Dipti (নিখিল কৃষ্ণ এবং দীপ্তি),78,,
-98,Nirod Krishna and Bela / Purnima (নিরোদে কৃষ্ণ ও বেলা/পূর্ণিমা),78,,
-99,Nirmal Krishna and Poly (নির্মল কৃষ্ণ এবং পলি),91,,
-100,Ajay and Moly (অজয় এবং মলি),91,,
-101,Ashit and Shipra (অসিত এবং শিপ্রা),91,,
-102,Ashok and Indira (অশোক এবং ইন্দিরা),91,,
-103,Shipra and Pankaj (শিপ্রা এবং পঙ্কজ),91,,
-104,Supriya and Sanchita (সুপ্রিয়া এবং সঞ্চিতা),91,,
-105,Purnima and Gautam (পূর্ণিমা এবং গৌতম),91,,
-106,Kalpana and Arup (কল্পনা এবং অরূপ),91,,
-107,Anjan and Sujata (অঞ্জন এবং সুজাতা),91,,
-108,Shewli (শিউলী),99,,
-109,Nacchu (নাচ্চু),99,,
-110,Paramita (পারমিতা),100,,
-111,Abhishek (অভিষেক),101,,
-112,Swaralipi (স্বরলিপি),102,,
-113,Aghosha (অঘোষা),91,,
-114,Amitava and Tultul / Dolly (অমিতাভ এবং টুলটুল / ডলি),92,,
-115,Rina and Khitish (রীনা এবং ক্ষিতিশ),92,,
-116,Swapna and Biswanath (স্বপ্না এবং বিশ্বনাথ),92,,
-117,Shila and Charu (শিলা এবং চারু),92,,
-118,Alpana and Ranjit (আল্পনা ও রঞ্জিত),92,,
-119,Tirtha and Gargi (তীর্থ এবং গার্গী),114,,
-120,Rashmi and Sudip (রশ্মি এবং সুদীপ),114,,
-121,Payal and (পায়েল এবং ),114,,
-122,Siddharta and Debjani (সিদ্ধার্থ এবং দেবযানী),94,,
-123,Rajesh and Bishakha (রাজেশ এবং বিশাখা),94,,
-124,Sukanya (সুকন্যা),122,,
-125,Tapas and Swapna (তাপস এবং স্বপ্না),97,,
-126,Tarun and Jaya (তরুণ এবং জয়া),97,,
-127,Tamal and Gitasri (তমাল এবং গীতশ্রী),97,,
-128,Ayan (অয়ন),125,,
-129,Ankan (অঙ্কন),126,,
-130,Anusha (অনুষা),127,,
-131,Ayushi (আয়ুষী),127,,
-132,Mitali and Badal (মিতালী এবং বাদল),98,,
-133,Mausumi and Madan (মৌসুমী এবং মদন),98,,
-134,Sonali (সোনালী),98,,
+51,Akshay Kumar (অক্ষয় কুমার),39,,13
+52,Debendra Nath and Nirmali (দেবেন্দ্র নাথ এবং নির্মালী),39,,13
+53,Surendra Nath (সুরেন্দ্র নাথ),39,,13
+54,Nripendra (নৃপেন্দ্র),51,,14
+55,Priyambada (প্রিয়ম্বদা),51,,14
+56,Santosh (সন্তোষ),52,,14
+57,Bimal (বিমল),52,,14
+58,Parimal (পরিমল),52,,14
+59,Krishna Chandra and Indu Moti (কৃষ্ণ চন্দ্র এবং ইন্দু মতি),26,,11
+60,Krishna Dhan and Rajlakshmi (কৃষ্ণ ধন এবং রাজলক্ষ্মী),59,,12
+61,Heramba Mohan and Priyobala (হেরম্ব মোহন এবং প্রিয়বালা),60,,13
+62,Shaibalini and Jagadish Chandra (শৈবলিনী ও জগদীশচন্দ্র),60,,13
+63,Charubashini and Indubhushan (চারুবাসিনী এবং ইন্দুভূষণ),60,,13
+64,Hirendra Narayan and Bina Rani (হীরেন্দ্র নারায়ণ ও বীণা রানী),61,,14
+65,Himendra Narayan (হিমেন্দ্র নারায়ণ),61,,14
+66,Himadri Narayan (হিমাদ্রি নারায়ণ),64,,15
+67,Gokul Chandra (গোকুল চন্দ্র),25,,11
+68,Nimai Chandra (নিমাই চন্দ্র),25,,11
+69,Nabin Chandra (নবীন চন্দ্র),67,,12
+70,Gagan Chandra (গগন চন্দ্র),67,,12
+71,Krishna Chaitanya and Surayu Bala (কৃষ্ণ চৈতন্য এবং সূর্য বালা),69,,13
+72,Nagendra Nath and Hiranbala (নগেন্দ্র নাথ এবং হিরণবালা),69,,13
+73,Aditya (আদিত্য),71,,14
+74,Niranjyan (নিরঞ্জন),72,,14
+75,Sadhan (সাধন),72,,14
+76,Bhajan (ভজন),72,,14
+77,Hari Das and Abala Bala (হরি দাস এবং আবলা বালা),70,,13
+78,Binod Chandra and Saila Bala (বিনোদ চন্দ্র এবং শৈল বালা),70,,13
+79,Kumud Chandra and Angshu Bala (কুমুদ চন্দ্র এবং অংশু বালা),70,,13
+80,Sarat Chandra (শরৎচন্দ্র),70,,13
+81,Shailendra (শৈলেন্দ্র),77,,14
+82,Nitai (নিতাই),77,,14
+83,Shukomoy (সুখোময়),79,,14
+84,Joytirmoy and Uma (জোতির্ময় এবং উমা),79,,14
+85,Bishyamoy and Bani (বিশ্বময় এবং বাণী),79,,14
+86,Swarnamoy (স্বর্ণময়),79,,14
+87,Badal (বাদল),80,,14
+88,Tulu and Lal Mohan (টুলু এবং লাল মোহন),80,,14
+89,Kuntala and Dinesh (কুন্তলা এবং দীনেশ),80,,14
+90,Bivabati (বিভাবতী),80,,14
+91,Shantimoy and Kalyani (শান্তিময় এবং কল্যাণী),78,,15
+92,Shudhamoy and Protima (শুধাময় এবং প্রতিমা),78,,15
+93,Satyamoy (সত্যময়),78,,15
+94,Anil Chandra and Minoti (অনিল চন্দ্র এবং মিনতি),78,,15
+95,Protibha and Sukumar (প্রতিভা এবং সুকুমার),78,,15
+96,Sunil Chandra (সুনীল চন্দ্র),78,,15
+97,Nikhil Krishna and Dipti (নিখিল কৃষ্ণ এবং দীপ্তি),78,,15
+98,Nirod Krishna and Bela / Purnima (নিরোদে কৃষ্ণ ও বেলা/পূর্ণিমা),78,,15
+99,Nirmal Krishna and Poly (নির্মল কৃষ্ণ এবং পলি),91,,16
+100,Ajay and Moly (অজয় এবং মলি),91,,16
+101,Ashit and Shipra (অসিত এবং শিপ্রা),91,,16
+102,Ashok and Indira (অশোক এবং ইন্দিরা),91,,16
+103,Shipra and Pankaj (শিপ্রা এবং পঙ্কজ),91,,16
+104,Supriya and Sanchita (সুপ্রিয়া এবং সঞ্চিতা),91,,16
+105,Purnima and Gautam (পূর্ণিমা এবং গৌতম),91,,16
+106,Kalpana and Arup (কল্পনা এবং অরূপ),91,,16
+107,Anjan and Sujata (অঞ্জন এবং সুজাতা),91,,16
+108,Shewli (শিউলী),99,,17
+109,Nacchu (নাচ্চু),99,,17
+110,Paramita (পারমিতা),100,,17
+111,Abhishek (অভিষেক),101,,17
+112,Swaralipi (স্বরলিপি),102,,17
+113,Aghosha (অঘোষা),91,,17
+114,Amitava and Tultul / Dolly (অমিতাভ এবং টুলটুল / ডলি),92,,16
+115,Rina and Khitish (রীনা এবং ক্ষিতিশ),92,,16
+116,Swapna and Biswanath (স্বপ্না এবং বিশ্বনাথ),92,,16
+117,Shila and Charu (শিলা এবং চারু),92,,16
+118,Alpana and Ranjit (আল্পনা ও রঞ্জিত),92,,16
+119,Tirtha and Gargi (তীর্থ এবং গার্গী),114,,17
+120,Rashmi and Sudip (রশ্মি এবং সুদীপ),114,,17
+121,Payal and Partha (পায়েল এবং পার্থ),114,,17
+122,Siddharta and Debjani (সিদ্ধার্থ এবং দেবযানী),94,,17
+123,Rajesh and Bishakha (রাজেশ এবং বিশাখা),94,,17
+124,Sukanya (সুকন্যা),122,,18
+125,Tapas and Swapna (তাপস এবং স্বপ্না),97,,17
+126,Tarun and Jaya (তরুণ এবং জয়া),97,,17
+127,Tamal and Gitasri (তমাল এবং গীতশ্রী),97,,17
+128,Ayan (অয়ন),125,,18
+129,Ankan (অঙ্কন),126,,18
+130,Anusha (অনুষা),127,,18
+131,Ayushi (আয়ুষী),127,,18
+132,Mitali and Badal (মিতালী এবং বাদল),98,,17
+133,Mausumi and Madan (মৌসুমী এবং মদন),98,,17
+134,Sonali (সোনালী),98,,17
+135,Abhilash (অভিলাষ),119,,18
