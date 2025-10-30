@@ -43,8 +43,10 @@
   .highlight rect{ stroke:#ff8a65; stroke-width:2.6px; filter: drop-shadow(0 8px 18px rgba(255,134,94,0.12)); }
   .faded{ opacity:0.18; transition:opacity 280ms ease; }
 
-  footer{ position:fixed; bottom:6px; left:0; right:0; text-align:center; z-index:160; }
-  #footerJump{ cursor:pointer; color:var(--accent); font-weight:700; }
+  footer{ position:fixed; bottom:6px; left:0; right:0; text-align:center; z-index:160; font-size:13px; color:#3b4b58; }
+  .cc-wrap{ display:inline-flex; align-items:center; gap:8px; justify-content:center; }
+  .cc-badge{ width:20px; height:20px; display:inline-block; }
+  a.cclink{ color:var(--accent); text-decoration:none; font-weight:700; margin-left:6px; }
 </style>
 </head>
 <body>
@@ -69,13 +71,25 @@
     <strong>About</strong>
     <button id="hideInfo" style="background:#f0f7ff;border:0;padding:6px;border-radius:8px;color:var(--accent);cursor:pointer;">Hide</button>
   </div>
-  <p style="margin-top:8px;color:#34495e;font-size:13px;">As far as it is known, the first printed (Bengali) edition of the Guha Family Tree (originally based in the Thegoria Village of District Headquarters of Dhaka Zilla, pre-independent India) was released by Shri Heramba Mohan Guha during the 1930s. During India's independence in 1947, the different branches of the family were scattered all over India and abroad, and they were disconnected. This tree was reconstructed in English based on known information during the 1990s by Dr. Tamal Kumar Guha. Subsequently, on 15th February 2003, a printed (Bengali) edition was published by Shri Tarun Kumar Guha.</p> 
-<p>At the end of October 2025, I (Tamal Kumar Guha) took an initiative to make an electronic version. Due to lack of information, only the Shri Gagan Chandra Guha branch was expanded (based on the information available). Hence, this electronic version is incomplete and would take substantial contributions from all those who are part of the family or aware of the existence of different family members. I expect that modern social media will help us all contribute more to the project's expansion and completion. – Tamal Kumar Guha.</p>
+  <p style="margin-top:8px;color:#34495e;font-size:13px;">Click a node to reveal its immediate children. Expanding a branch collapses its siblings. Search includes name and details; suggestions come from the full dataset. Download waits for images to load (may fail if images are hosted without CORS).</p>
 </div>
 
 <div id="svgwrap"><svg></svg></div>
 
-<footer><span id="footerJump">Jump to Tamal</span></footer>
+<footer>
+  <div class="cc-wrap">
+    <span>© Tamal Kumar Guha</span>
+    <!-- CC BY-NC-ND icon (inline SVG) -->
+    <svg class="cc-badge" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" title="CC BY-NC-ND">
+      <rect width="24" height="24" rx="3" fill="#1f6fb5"/>
+      <g transform="translate(2,2)" fill="#fff">
+        <circle cx="5" cy="6" r="4"/>
+        <path d="M13 4h6v2h-6zM13 8h6v2h-6z" />
+      </g>
+    </svg>
+    <a class="cclink" href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="noopener">CC BY-NC-ND</a>
+  </div>
+</footer>
 
 <script>
 /* ---------- CONFIG ---------- */
@@ -92,7 +106,9 @@ const tree = d3.tree().nodeSize([96, 300]);
 const duration = 420;
 
 let root = null;
-let flatList = []; // entire dataset for search
+let originalRows = [];   // parsed CSV rows (raw)
+let idToHierarchy = {};  // id -> d3 node (populated after hierarchy built)
+let flatList = [];       // search list built from originalRows with attached node references
 
 /* ---------- load csv ---------- */
 fetch(csvPath).then(r => {
@@ -101,23 +117,27 @@ fetch(csvPath).then(r => {
 }).then(txt => {
   const rows = d3.csvParse(txt);
   if(!rows || !rows.length) throw new Error("CSV empty");
-  buildHierarchy(rows);
+  originalRows = rows.map(r => ({
+    ID: (r.ID||r.id||"").toString().trim(),
+    Name: (r.Name||r.name||"").toString().trim(),
+    ParentID: (r.ParentID||r.parentid||"").toString().trim(),
+    PhotoURL: (r.PhotoURL||r.photoURL||r.photo||"").toString().trim(),
+    Details: (r.Details||r.details||"").toString().trim()
+  }));
+  buildHierarchy(originalRows);
 }).catch(err => {
   console.error(err);
   alert("Error loading data/family.csv — check path and file. See console.");
 });
 
-/* ---------- build hierarchy from ParentID; compute depths; startup S2 ---------- */
+/* ---------- build hierarchy using ParentID & auto-gen (G2) ---------- */
 function buildHierarchy(rows){
   const map = {};
-  rows.forEach(r => {
-    const ID = (r.ID||r.id||"").toString().trim();
-    map[ID] = {...r, ID, children: []};
-  });
+  rows.forEach(r => { map[r.ID] = {...r, children: []}; });
   const roots = [];
   rows.forEach(r => {
-    const ID = (r.ID||r.id||"").toString().trim();
-    const P = (r.ParentID||r.parentid||"").toString().trim();
+    const ID = r.ID;
+    const P = r.ParentID;
     if(P && map[P]) map[P].children.push(map[ID]);
     else roots.push(map[ID]);
   });
@@ -125,6 +145,10 @@ function buildHierarchy(rows){
   if(!rootObj){ alert("No root found in CSV"); return; }
 
   root = d3.hierarchy(rootObj, d => d.children && d.children.length ? d.children : null);
+  // populate idToHierarchy by traversing hierarchy
+  idToHierarchy = {};
+  root.each(d => { if(d.data && d.data.ID) idToHierarchy[d.data.ID] = d; });
+
   // auto-calc generation
   root.each(d => d.data._gen = d.depth + 1);
   computeDesc(root);
@@ -132,15 +156,14 @@ function buildHierarchy(rows){
   // STARTUP S2: collapse deeper than depth 1 (only Gen1 & Gen2 visible)
   root.each(d => { if(d.depth > 1){ if(d.children){ d._children = d.children; d._children.forEach(collapse); d.children = null; } } });
 
-  // build flatList from ALL nodes (full dataset) for searching
-  flatList = [];
-  root.each(d => flatList.push({ id: d.data.ID, name: d.data.Name || "", details: (d.data.Details||"") , node: d }));
+  // build flatList from originalRows (so includes disconnected rows too). Attach node reference if exists.
+  flatList = originalRows.map(r => ({ id: r.ID, name: r.Name || "", details: r.Details || "", node: idToHierarchy[r.ID] || null }));
 
   update(root);
   setTimeout(()=> centerOnNode(root, 0.95), 300);
 }
 
-/* compute descendant counts (used for badge earlier if needed) */
+/* compute descendant counts */
 function computeDesc(node){
   function rec(n){
     let tot = 0;
@@ -155,7 +178,7 @@ function computeDesc(node){
 /* collapse helper */
 function collapse(n){ if(n.children){ n._children = n.children; n._children.forEach(collapse); n.children = null; } }
 
-/* Expand target, collapse siblings (E2) */
+/* Expand target and collapse siblings (E2) */
 function expandAndKeep(target){
   if(!target) return;
   const parent = target.parent;
@@ -167,7 +190,7 @@ function expandAndKeep(target){
   update(target);
 }
 
-/* ========== UPDATE (render) ========== */
+/* ========== Update/render ========== */
 function update(source){
   const treeData = tree(root);
   const nodes = treeData.descendants();
@@ -230,7 +253,7 @@ function update(source){
     gnode.insert("rect","text").attr("x",-rectW/2).attr("y",-rectH/2).attr("width",rectW).attr("height",rectH).attr("rx",10).attr("ry",10)
       .classed("leaf", !(d.children || d._children));
 
-    // photo only if PhotoURL present (PH1)
+    // photo only if PhotoURL present
     if(hasPhoto){
       const px = 0;
       const py = -rectH/2 + PHOTO_SIZE/2 + 8;
@@ -299,12 +322,14 @@ searchBox.addEventListener('input', e => {
     const name = (item.name||'').toLowerCase();
     const details = (item.details||'').toLowerCase();
     let score = 0;
-    if(name === q) score = 100;
-    else if(name.startsWith(q)) score = 80;
-    else if(name.includes(q)) score = 60;
-    else if(details.includes(q)) score = 40;
+    if(name === q) score = 200;
+    else if(name.startsWith(q)) score = 160;
+    else if(name.includes(q)) score = 120;
+    else if(details.includes(q)) score = 80;
+    // prefer items that have a node so selecting will work
+    if(item.node) score += 5;
     return {...item, score};
-  }).filter(x => x.score > 0).sort((a,b)=> b.score - a.score);
+  }).filter(x => x.score > 0).sort((a,b) => b.score - a.score);
   showSuggestions(matches);
 });
 
@@ -313,9 +338,13 @@ searchBox.addEventListener('keydown', e => {
 });
 
 function selectFromSearch(item){
-  expandPathTo(item.node);
-  centerOnNode(item.node, 1.0);
-  highlightNode(item.node);
+  if(item.node){
+    expandPathTo(item.node);
+    centerOnNode(item.node, 1.0);
+    highlightNode(item.node);
+  } else {
+    alert("This person exists in the CSV but is not connected in the current tree structure. Please check the ParentID for ID: " + item.id);
+  }
 }
 
 /* expand path */
@@ -345,11 +374,10 @@ function highlightNode(d){
   clearTimeout(window._hlt); window._hlt = setTimeout(()=> { g.selectAll("g.node").classed("highlight", false).classed("faded", false); }, 7000);
 }
 
-/* ---------- find best match (J-P: partial allowed, best fuzzy) ---------- */
+/* ---------- find best match (J-P partial allowed) ---------- */
 function findBestMatch(q){
   if(!q) return null;
   q = q.toLowerCase();
-  // compute simple score across name and details
   const scored = flatList.map(item => {
     const name = (item.name||'').toLowerCase();
     const details = (item.details||'').toLowerCase();
@@ -357,16 +385,15 @@ function findBestMatch(q){
     if(name === q) score = 200;
     else if(name.startsWith(q)) score = 160;
     else if(name.includes(q)) score = 120;
-    // penalize if only details
     if(details.includes(q) && score === 0) score = 80;
-    // small boost if name contains ascii letters matching (favor english)
-    if(/[a-z]/i.test(q) && /[a-z]/i.test(name)) score += 5;
+    if(item.node) score += 5; // prefer items actually in hierarchy
+    if(/[a-z]/i.test(q) && /[a-z]/i.test(name)) score += 3;
     return {...item, score};
   }).filter(x => x.score > 0).sort((a,b) => b.score - a.score);
   return scored.length ? scored[0] : null;
 }
 
-/* ---------- Toolbar actions ---------- */
+/* ---------- toolbar actions ---------- */
 document.getElementById('expandAll').addEventListener('click', () => {
   if(!root) return;
   root.each(d => { if(d._children){ d.children = d._children; d._children = null; } });
@@ -383,7 +410,6 @@ document.getElementById('resetView').addEventListener('click', () => { if(root) 
 document.getElementById('downloadPng').addEventListener('click', async () => {
   try {
     await waitForSvgImages();
-    // clone and inline basic styles
     const svgNode = svg.node();
     const clone = svgNode.cloneNode(true);
     inlineBasicStyles(clone);
@@ -416,60 +442,44 @@ document.getElementById('downloadPng').addEventListener('click', async () => {
   }
 });
 
-/* wait for images used inside svg to finish loading (or timeout) */
 function waitForSvgImages(timeout = 6000){
   const images = Array.from(svg.node().querySelectorAll('image'));
   if(!images.length) return Promise.resolve();
   const promises = images.map(imgEl => {
-    return new Promise((resolve, reject) => {
-      // try to load via Image object to detect CORS tainting earlier
+    return new Promise(resolve => {
       const href = imgEl.getAttribute('xlink:href') || imgEl.getAttribute('href');
       if(!href) return resolve();
       const img = new Image();
-      // do not set crossOrigin (can't guarantee) — we just wait for load/error
       img.onload = () => resolve();
-      img.onerror = () => {
-        // still resolve but mark as problematic
-        resolve();
-      };
+      img.onerror = () => resolve();
       img.src = href;
-      // if already cached complete quickly
       if(img.complete) resolve();
     });
   });
-  // wait all or timeout
   return Promise.race([ Promise.all(promises), new Promise((_,rej) => setTimeout(()=> rej(new Error('Image load timeout')), timeout)) ]);
 }
 
-/* inline simple styles into cloned svg to help png rendering */
 function inlineBasicStyles(svgElement){
-  // inline rect/path/text colors used by us
   svgElement.querySelectorAll('rect').forEach(r => {
-    const fill = r.getAttribute('fill') || window.getComputedStyle(r).fill || '#fff';
-    const stroke = r.getAttribute('stroke') || window.getComputedStyle(r).stroke || '#b08b57';
+    const fill = r.getAttribute('fill') || '#fff';
+    const stroke = r.getAttribute('stroke') || '#b08b57';
     r.setAttribute('fill', fill); r.setAttribute('stroke', stroke);
   });
   svgElement.querySelectorAll('path').forEach(p => {
-    const stroke = p.getAttribute('stroke') || window.getComputedStyle(p).stroke || '#d7d7d7';
+    const stroke = p.getAttribute('stroke') || '#d7d7d7';
     p.setAttribute('stroke', stroke); p.setAttribute('fill','none');
   });
   svgElement.querySelectorAll('text').forEach(t => {
-    const fill = t.getAttribute('fill') || window.getComputedStyle(t).fill || '#15232f';
-    const fs = t.getAttribute('font-size') || window.getComputedStyle(t).fontSize || '13px';
+    const fill = t.getAttribute('fill') || '#15232f';
+    const fs = t.getAttribute('font-size') || '13px';
     t.setAttribute('fill', fill); t.setAttribute('font-size', fs);
   });
 }
 
-/* ---------- footer jump (J-P best partial match) ---------- */
-document.getElementById('footerJump').addEventListener('click', () => {
-  if(!flatList.length){ alert('Data not ready'); return; }
-  const q = FOOTER_NAME.toLowerCase();
-  const best = findBestMatch(q);
-  if(!best){ alert("Could not find '" + FOOTER_NAME + "' in the data"); return; }
-  expandPathTo(best.node); centerOnNode(best.node, 1.0); highlightNode(best.node);
-});
+/* ---------- footer: replaced with copyright & CC BY-NC-ND (no jump) ---------- */
+/* (No click handler intentionally; jump is unused in footer per your request) */
 
-/* ---------- helpers & UI glue ---------- */
+/* ---------- helpers ---------- */
 document.getElementById('hideInfo').addEventListener('click', ()=> document.getElementById('infoBox').style.display='none' );
 window.addEventListener('resize', ()=> { if(root) centerOnNode(root, 0.85); });
 
